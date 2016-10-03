@@ -31,8 +31,8 @@ def parse_args():
                         help='IP address for ftp server.')
     parser.add_argument('-p, --port', dest='port', type=int, default=21,
                         help='Port number for ftp server.')
-    parser.add_argument('-A, --anonymous', dest='anon', action='store_true',
-                        help='Enable anonymous user.')
+    parser.add_argument('-A, --no-anonymous', dest='anon', action='store_false',
+                        help='Disable anonymous user.')
     parser.add_argument('-D, --directory', dest='dir', default=os.getcwd(),
                         help='The default serving directory.')
     parser.add_argument('users', nargs='*',
