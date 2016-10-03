@@ -31,22 +31,27 @@ def parse_args():
                         help='IP address for ftp server.')
     parser.add_argument('-p, --port', dest='port', type=int, default=21,
                         help='Port number for ftp server.')
-    parser.add_argument('-D, --directory', dest='dir', default=os.getcwd(),
-                        help='The root directory to serve.')
-    parser.add_argument('-U, --user', dest='user', default='ftpuser',
-                        help='Login username.')
-    parser.add_argument('-P, --pass', dest='passwd', default='ftppass',
-                        help='Login password.')
     parser.add_argument('-A, --anonymous', dest='anon', action='store_true',
                         help='Enable anonymous user.')
+    parser.add_argument('-D, --directory', dest='dir', default=os.getcwd(),
+                        help='The default serving directory.')
+    parser.add_argument('users', nargs='*',
+                        help='[USER:rw:DIR:PASSWORD [... USER:ro:DIR:PASSWORD]]')
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    users = [x.split(':') for x in args.users]
 
     authorizer = DummyAuthorizer()
-    authorizer.add_user(args.user, args.passwd, args.dir, perm='elradfmwM')
     args.anon and authorizer.add_anonymous(args.dir)
+    credentials = []
+    for x in users:
+        user, _perm, _dir, pwd = x
+        _dir = args.dir if _dir.strip() is '' else _dir
+        perm = 'elradfmwM' if _perm is 'rw' else 'elr'
+        credentials.append((user, pwd))
+        authorizer.add_user(user, pwd, _dir, perm=perm)
 
     handler = FTPHandler
     handler.authorizer = authorizer
@@ -58,8 +63,8 @@ def main():
     server.max_cons = 256
     server.max_cons_per_ip = 5
 
-    print('You can login as [%s] with password [%s]. Anonymous user is %s.' %
-          (args.user, args.passwd, 'enabled' if args.anon else 'disabled'))
+    print('Login credentials: %s\nAnonymous user is %s.' %
+          (credentials, 'enabled' if args.anon else 'disabled'))
 
     server.serve_forever()
 
